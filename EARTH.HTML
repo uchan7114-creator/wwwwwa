@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>베이스볼 스타디움 - 메인</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            background-color: #1e3932;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .content {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btn-container {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .game-btn {
+            background-color: #2b7a78;
+            color: white;
+        }
+        .game-btn:hover {
+            background-color: #17252a;
+        }
+        .earthquake-btn {
+            background-color: #def2f1;
+            color: #17252a;
+            border: 1px solid #2b7a78;
+        }
+        .earthquake-btn:hover {
+            background-color: #feffff;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            color: #1e3932;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>⚾ 야구 메인 스타디움</h2>
+    </header>
+    <div class="content">
+        <h3>오늘의 주요 경기 일정</h3>
+        <p>여기에 실시간 스코어, 뉴스, 구단 순위 등의 내용을 채워 넣을 수 있습니다.</p>
+        
+        <div class="btn-container">
+            <!-- 게임 시작 클릭 시 game.html 이동 -->
+            <a href="game.html" class="action-btn game-btn">🎮 게임 시작</a>
+            <!-- 지진 모델링 클릭 시 earth.html 이동 -->
+            <a href="earth.html" class="action-btn earthquake-btn">🌋 지진 모델링</a>
+        </div>
+
+        <a href="index.html" class="back-btn">← 처음으로 돌아가기</a>
+    </div>
+</body>
+</html>
