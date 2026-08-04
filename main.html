@@ -27,6 +27,36 @@
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+        .btn-container {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .game-btn {
+            background-color: #2b7a78;
+            color: white;
+        }
+        .game-btn:hover {
+            background-color: #17252a;
+        }
+        .earthquake-btn {
+            background-color: #def2f1;
+            color: #17252a;
+            border: 1px solid #2b7a78;
+        }
+        .earthquake-btn:hover {
+            background-color: #feffff;
+        }
         .back-btn {
             display: inline-block;
             margin-top: 20px;
@@ -43,8 +73,13 @@
     <div class="content">
         <h3>오늘의 주요 경기 일정</h3>
         <p>여기에 실시간 스코어, 뉴스, 구단 순위 등의 내용을 채워 넣을 수 있습니다.</p>
+        
+        <div class="btn-container">
+            <button class="action-btn game-btn" onclick="location.href='game.html'">🎮 게임 시작</button>
+            <button class="action-btn earthquake-btn" onclick="location.href='earthquake.html'">🌋 지진 모델링</button>
+        </div>
+
         <a href="index.html" class="back-btn">← 처음으로 돌아가기</a>
     </div>
 </body>
 </html>
-
