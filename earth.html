@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Earth Map</title>
+
+<style>
+html, body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#bfc3c6;
+}
+
+#map{
+    position:absolute;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+#canvas{
+    position:absolute;
+    left:0;
+    top:0;
+    width:100%;
+    height:100%;
+}
+</style>
+
+</head>
+<body>
+
+<!-- 세계지도 -->
+<img id="map"
+src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg">
+
+<!-- 마커나 선을 그릴 캔버스 -->
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+function resize(){
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+}
+window.addEventListener("resize",resize);
+resize();
+
+function drawPoint(x,y,color,size){
+    ctx.beginPath();
+    ctx.arc(x,y,size,0,Math.PI*2);
+    ctx.fillStyle=color;
+    ctx.fill();
+}
+
+// 예시 마커
+drawPoint(canvas.width*0.75, canvas.height*0.35,"orange",8);
+drawPoint(canvas.width*0.20, canvas.height*0.55,"red",8);
+drawPoint(canvas.width*0.60, canvas.height*0.70,"yellow",8);
+
+</script>
+
+</body>
+</html>
