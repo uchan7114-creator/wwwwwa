@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>HTML5 JavaScript Pinball Game</title>
+    <style>
+        body {
+            background-color: #111;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        canvas {
+            background: radial-gradient(circle, #1a153a 0%, #070514 100%);
+            border: 4px solid #4a3f85;
+            box-shadow: 0 0 20px rgba(116, 95, 235, 0.5);
+            display: block;
+            margin: 10px auto;
+        }
+        .controls {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        kbd {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 2px 6px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 SPACE PINBALL</h1>
+    <div style="font-size: 20px; font-weight: bold; color: #00ffcc;">
+        SCORE: <span id="scoreBoard">0</span>
+    </div>
+    
+    <canvas id="gameCanvas" width="450" height="700"></canvas>
+
+    <div class="controls">
+        <kbd>Z</kbd> 왼쪽 플리퍼 | <kbd>/</kbd> 오른쪽 플리퍼 | <kbd>Space</kbd> 공 발사 (게임 오버 시 재시작)
+    </div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const scoreBoard = document.getElementById("scoreBoard");
+
+let score = 0;
+let gameOver = false;
+
+// 물리 환경 설정
+const gravity = 0.25;
+
+// 공(Ball) 객체 정의
+let ball = {
+    x: 425,
+    y: 600,
+    vx: 0,
+    vy: 0,
+    radius: 10,
+    color: "#e0e0e0",
+    reset: function() {
+        this.x = 425;
+        this.y = 650;
+        this.vx = 0;
+        this.vy = -14; // 발사 속도
+        gameOver = false;
+    }
+};
+
+// 범퍼(Bumper) 배열 - 부딪히면 튕겨나가며 점수 획득
+const bumpers = [
+    { x: 150, y: 180, radius: 25, color: "#ff0055", score: 100 },
+    { x: 270, y: 180, radius: 25, color: "#ff0055", score: 100 },
+    { x: 210, y: 260, radius: 30, color: "#00ffcc", score: 200 }
+];
+
+// 벽면 라인 정의 (핀볼 보드 외곽선 및 유도벽)
+const walls = [
+    // 왼쪽 외벽
+    { x1: 0, y1: 0, x2: 0, y2: 700 },
+    // 오른쪽 외벽 (공 발사대 격리벽)
+    { x1: 400, y1: 150, x2: 400, y2: 700 },
+    { x1: 450, y1: 0, x2: 450, y2: 700 },
+    // 상단 아치 곡선 대용 사선 벽들
+    { x1: 0, y1: 100, x2: 100, y2: 0 },
+    { x1: 100, y1: 0, x2: 350, y2: 0 },
+    { x1: 350, y1: 0, x2: 450, y2: 100 },
+    // 하단 배수구 사선 벽
+    { x1: 0, y1: 550, x2: 120, y2: 630 },
+    { x1: 400, y1: 550, x2: 280, y2: 630 }
+];
+
+// 플리퍼(Flipper) 클래스 정의
+class Flipper {
+    constructor(x, y, length, baseAngle, maxSwing, leftKey, rightKey, isLeft) {
+        this.x = x;
+        this.y = y;
+        this.length = length;
+        this.baseAngle = baseAngle; // 평소 각도
+        this.maxSwing = maxSwing;   // 회전할 최대 각도 변위
+        this.currentAngle = baseAngle;
+        this.isLeft = isLeft;
+        this.active = false;
+        this.angularVelocity = 0.2; // 회전 속도
+    }
+
+    update() {
+        // 키가 눌려있으면 위로 스윙, 떼지면 제자리로 복귀
+        if (this.active) {
+            if (this.isLeft) {
+                this.currentAngle = Math.max(this.baseAngle - this.maxSwing, this.currentAngle - this.angularVelocity);
+            } else {
+                this.currentAngle = Math.min(this.baseAngle + this.maxSwing, this.currentAngle + this.angularVelocity);
+            }
+        } else {
+            if (this.isLeft) {
+                this.currentAngle = Math.min(this.baseAngle, this.currentAngle + this.angularVelocity * 0.6);
+            } else {
+                this.currentAngle = Math.max(this.baseAngle, this.currentAngle - this.angularVelocity * 0.6);
+            }
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.currentAngle);
+        
+        // 플리퍼 디자인 그리기
+        ctx.fillStyle = "#745feb";
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(0, -8, this.length, 16, [8]);
+        ctx.fill();
+        ctx.stroke();
+        
+        // 플리퍼 축 그리기
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    // 공이 플리퍼 선분과 충돌했는지 체크하는 렌더링 물리
+    checkCollision(ball) {
+        const tipX = this.x + Math.cos(this.currentAngle) * this.length;
+        const tipY = this.y + Math.sin(this.currentAngle) * this.length;
+
+        // 선분 상의 가장 가까운 점 계산
+        const l2 = Math.pow(tipX - this.x, 2) + Math.pow(tipY - this.y, 2);
+        let t = ((ball.x - this.x) * (tipX - this.x) + (ball.y - this.y) * (tipY - this.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+
+        const closestX = this.x + t * (tipX - this.x);
+        const closestY = this.y + t * (tipY - this.y);
+
+        const distance = Math.hypot(ball.x - closestX, ball.y - closestY);
+
+        if (distance < ball.radius) {
+            // 위치 보정
+            const nx = (ball.x - closestX) / distance;
+            const ny = (ball.y - closestY) / distance;
+            ball.x = closestX + nx * ball.radius;
+
+            // 반사 벡터 연산 + 플리퍼가 움직일 때 강한 추진력 부여
+            const flipperSpeed = this.active ? 7 : 1;
+            const dot = ball.vx * nx + ball.vy * ny;
+            
+            ball.vx = (ball.vx - 2 * dot * nx) * 0.8;
+            ball.vy = (ball.vy - 2 * dot * ny) * 0.8 - (this.active ? flipperSpeed : 0);
+            
+            score += 10;
+            scoreBoard.innerText = score;
+        }
+    }
+}
+
+// 플리퍼 객체 생성 (왼쪽: Z, 오른쪽: /)
+const leftFlipper = new Flipper(120, 630, 70, Math.PI / 6, Math.PI / 3, "z", "", true);
+const rightFlipper = new Flipper(280, 630, 70, Math.PI - Math.PI / 6, Math.PI / 3, "", "/", false);
+
+// 키보드 이벤트 리스너 설정
+window.addEventListener("keydown", (e) => {
+    if (e.key.toLowerCase() === "z") leftFlipper.active = true;
+    if (e.key === "/") rightFlipper.active = true;
+    if (e.key === " " || e.code === "Space") {
+        if (gameOver || (ball.y > 700)) {
+            ball.reset();
+        }
+    }
+});
+
+window.addEventListener("keyup", (e) => {
+    if (e.key.toLowerCase() === "z") leftFlipper.active = false;
+    if (e.key === "/") rightFlipper.active = false;
+});
+
+// 물리 엔진 업데이트 로직
+function update() {
+    if (gameOver) return;
+
+    // 중력 적용
+    ball.vy += gravity;
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    // 1. 범퍼 충돌 처리
+    bumpers.forEach(bumper => {
+        let dist = Math.hypot(ball.x - bumper.x, ball.y - bumper.y);
+        if (dist < ball.radius + bumper.radius) {
+            // 밀려나는 방향 벡터
+            let nx = (ball.x - bumper.x) / dist;
+            let ny = (ball.y - bumper.y) / dist;
+            
+            // 공 위치 강제 고정 (끼임 방지)
+            ball.x = bumper.x + nx * (ball.radius + bumper.radius);
+            
+            // 튕겨나가는 탄성 연산 (범퍼는 추진력을 더해줌)
+            let bounce = 1.4;
+            let dot = ball.vx * nx + ball.vy * ny;
+            ball.vx = (ball.vx - 2 * dot * nx) * bounce;
+            ball.vy = (ball.vy - 2 * dot * ny) * bounce;
+
+            // 점수 추가 및 이펙트 처리
+            score += bumper.score;
+            scoreBoard.innerText = score;
+        }
+    });
+
+    // 2. 직선 벽면 충돌 처리
+    walls.forEach(wall => {
+        const l2 = Math.pow(wall.x2 - wall.x1, 2) + Math.pow(wall.y2 - wall.y1, 2);
+        let t = ((ball.x - wall.x1) * (wall.x2 - wall.x1) + (ball.y - wall.y1) * (wall.y2 - wall.y1)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        
+        const closestX = wall.x1 + t * (wall.x2 - wall.x1);
+        const closestY = wall.y1 + t * (wall.y2 - wall.y1);
+        
+        const dist = Math.hypot(ball.x - closestX, ball.y - closestY);
+        
+        if (dist < ball.radius) {
+            let nx = (ball.x - closestX) / dist;
+            let ny = (ball.y - closestY) / dist;
+            
+            ball.x = closestX + nx * ball.radius;
+            
+            let dot = ball.vx * nx + ball.vy * ny;
+            ball.vx = (ball.vx - 2 * dot * nx) * 0.7; // 벽면 감속 계수
+            ball.vy = (ball.vy - 2 * dot * ny) * 0.7;
+        }
+    });
+
+    // 3. 플리퍼 충돌 처리 및 각도 업데이트
+    leftFlipper.update();
+    rightFlipper.update();
+    leftFlipper.checkCollision(ball);
+    rightFlipper.checkCollision(ball);
+
+    // 4. 낙하(게임 오버) 조건 검사
+    if (ball.y > canvas.height + 50) {
+        gameOver = true;
+    }
+}
+
+// 화면 그리기 로직
+function draw() {
+    // 배경 지우기
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 우주선 궤도 디자인 선 (장식용 데코레이션)
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(200, 200, 150, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 벽면 그리기
+    ctx.strokeStyle = "#4a3f85";
+    ctx.lineWidth = 4;
+    walls.forEach(wall => {
+        ctx.beginPath();
+        ctx.moveTo(wall.x1, wall.y1);
+        ctx.lineTo(wall.x2, wall.y2);
+        ctx.stroke();
+    });
+
+    // 범퍼 그리기
+    bumpers.forEach(bumper => {
+        ctx.fillStyle = bumper.color;
+        ctx.shadowColor = bumper.color;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(bumper.x, bumper.y, bumper.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 내측 원 데코레이션
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(bumper.x, bumper.y, bumper.radius * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // 플리퍼 그리기
+    leftFlipper.draw();
+    rightFlipper.draw();
+
+    // 공 그리기
+    if (!gameOver) {
+        ctx.fillStyle = ball.color;
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0; // 그림자 초기화
+    } else {
+        ctx.fillStyle = "rgba(255, 0, 50, 0.8)";
+        ctx.font = "bold 30px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+        ctx.font = "16px Arial";
+        ctx.fillText("Press SPACE to Launch New Ball", canvas.width / 2, canvas.height / 2 + 40);
+    }
+}
+
+// 메인 게임 루프
