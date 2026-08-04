@@ -47,7 +47,9 @@
             background: repeating-linear-gradient(90deg, #1c2d3d, #1c2d3d 80px, #121e2a 160px);
             opacity: 0.4;
             clip-path: polygon(0% 100%, 10% 40%, 25% 70%, 40% 20%, 55% 60%, 70% 30%, 85% 80%, 100% 40%, 100% 100%);
+            /* 처음에 멈춰 있다가 게임 시작 시 움직이도록 설정 */
             animation: moveBg 20s linear infinite;
+            animation-play-state: paused;
         }
 
         .ground {
@@ -58,7 +60,9 @@
             height: 60px;
             background: linear-gradient(to bottom, #4d3319, #261a0d);
             border-top: 4px solid #556b2f;
+            /* 처음에 멈춰 있다가 게임 시작 시 움직이도록 설정 */
             animation: moveBg 4s linear infinite;
+            animation-play-state: paused;
         }
 
         @keyframes moveBg {
@@ -103,7 +107,7 @@
         }
 
         .hp-fill { background: #ff4d4d; }
-        .stamina-fill { background: #darkorange; }
+        .stamina-fill { background: orange; }
         .food-fill { background: #9acd32; }
         .water-fill { background: #1e90ff; }
 
@@ -234,12 +238,13 @@
         </div>
 
         <!-- 플레이어 -->
-        <div id="dino" class="running-animation">🦖</div>
+        <div id="dino">🦖</div>
 
         <!-- 시작 / 게임오버 메인 스크린 -->
         <div id="menu-overlay">
             <h1 id="menu-title" style="color: #4df3ff; margin-bottom: 5px;">가상 오버레이 접속됨</h1>
             <p id="menu-sub" style="color: #8fa0b0; margin: 5px 0 15px 0;">생존 구역에서 야생 생명체들을 회피하십시오.</p>
+            <!-- 도입 시작 버튼을 누르면 자바스크립트 startGame() 함수가 바로 구동됩니다 -->
             <button class="ark-btn" onclick="startGame()" id="start-btn">도입 시작 (START)</button>
             <p class="controls-desc">조작 방법: [Spacebar] 또는 화면 터치로 도약</p>
         </div>
@@ -286,38 +291,32 @@
         let dinoBottom = 60;
         const gravity = 1.4;
 
-        // 게임 초기 설정 및 시작 처리 
+        // 도입 시작 버튼 클릭 시 실제 런닝 게임 연동 처리 
         function startGame() {
-            menuOverlay.style.display = 'none';
+            menuOverlay.style.display = 'none'; // 오버레이 메뉴 감추기
             isPlaying = true;
             score = 0;
             scoreEl.innerText = score;
             dinoBottom = 60;
             dino.style.bottom = dinoBottom + 'px';
-            dino.classList.add('running-animation');
+            dino.classList.add('running-animation'); // 공룡 달리기 애니메이션 켜기
 
             // 아크 생존 핵심 스탯 초기화
             stats = { hp: 100, stamina: 100, food: 100, water: 100 };
             updateStatBars();
 
-            // 백그라운드 환경 스크롤 활성화
+            // 백그라운드 스크롤 애니메이션 작동 가동
             bgMountain.style.animationPlayState = 'running';
             bgGround.style.animationPlayState = 'running';
 
-            // 기존 장애물 파괴 클리어 
+            // 남아있던 이전 장애물 초기화 제거
             document.querySelectorAll('.obstacle').forEach(obs => obs.remove());
 
-            // 핵심 주기적 메인 루프 가동
+            // 핵심 실시간 프레임워크 연산 실행 루프 작동
             gameLoopInterval = setInterval(updateGame, 20);
             statInterval = setInterval(updateSurvivalStats, 1000);
 
-            // 최초 첫 장애물 소환 타이머 구동
+            // 첫 장애물 스폰 생성 처리
             spawnObstacle();
         }
 
-        // 점프 트리거 핸들러 
-        function triggerJump() {
-            if (!isPlaying || isJumping || stats.stamina < 15) return;
-            
-            isJumping = true;
-            jumpVelocity = 22; // 점프 최초 추진 속도
