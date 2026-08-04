@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>미니 슈팅 게임</title>
+    <title>ARK: 쥬라기 스타디움 슈팅 서바이벌</title>
     <style>
         body {
+            font-family: 'Malgun Gothic', sans-serif;
             margin: 0;
-            background-color: #111;
-            color: white;
-            font-family: sans-serif;
+            padding: 0;
+            background-color: #050a0e;
+            color: #fff;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -18,172 +19,249 @@
             overflow: hidden;
             user-select: none;
         }
-        #ui {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
+
+        h2 {
+            margin: 10px 0;
             color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            font-size: 24px;
         }
-        #gameCanvas {
-            background-color: #000;
-            border: 2px solid #00ffcc;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+
+        /* 메인 게임 화면 및 캔버스 */
+        #game-area {
+            position: relative;
+            width: 1000px;
+            height: 550px;
+            border: 3px solid #00ffcc;
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            overflow: hidden;
+        }
+
+        canvas {
+            background: linear-gradient(to bottom, #05131d 0%, #0d2332 50%, #1e1710 100%);
+            display: block;
+        }
+
+        /* 생존 인벤토리 HUD (좌측 상단) */
+        .inventory-hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(5, 15, 25, 0.85);
+            border: 1px solid #00ffcc;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: grid;
+            grid-template-columns: repeat(2, 110px);
+            gap: 6px;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* 서바이벌 생존 스탯바 (우측 상단) */
+        .hud-stats {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            background: rgba(5, 15, 25, 0.85);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #00ffcc;
+            font-size: 12px;
+            width: 140px;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .stat-bar { display: flex; align-items: center; gap: 6px; }
+        .bar-bg { flex: 1; height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
+        .bar-fill { height: 100%; width: 100%; transition: width 0.1s; }
+
+        /* 하단 제작 퀵바 */
+        .quickbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background: rgba(0,0,0,0.6);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,255,204,0.4);
+            z-index: 5;
+        }
+        .slot {
+            width: 75px;
+            height: 65px;
+            background: rgba(20,40,60,0.8);
+            border: 2px solid #666;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .slot.active { border-color: #00ffcc; background: rgba(0,255,204,0.2); }
+        .slot .icon { font-size: 22px; }
+
+        /* 오버레이 스크린 */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 12, 18, 0.98);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 30px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .story-text {
+            color: #ff3333;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            max-width: 800px;
+            line-height: 1.6;
+            text-shadow: 0 0 10px rgba(255,51,51,0.3);
+        }
+        .tutorial-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            max-width: 850px;
+            text-align: left;
+            margin-bottom: 20px;
+            background: rgba(250,250,250,0.05);
+            padding: 15px;
             border-radius: 8px;
         }
-        .info {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #aaa;
+        .tut-card { border-left: 3px solid #00ffcc; padding-left: 10px; font-size: 13px; line-height: 1.4; }
+        .tut-card b { color: #00ffcc; }
+
+        .ark-btn {
+            background: linear-gradient(135deg, #0e353d 0%, #155463 100%);
+            color: #00ffcc;
+            border: 2px solid #00ffcc;
+            padding: 14px 45px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            text-shadow: 0 0 8px rgba(0,255,204,0.6);
+            box-shadow: 0 0 15px rgba(0,255,204,0.3);
         }
+        .ark-btn:hover { background: #00ffcc; color: #0e353d; box-shadow: 0 0 25px #00ffcc; }
+
+        #log-box {
+            position: absolute;
+            top: 15px;
+            left: 270px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            pointer-events: none;
+            z-index: 6;
+        }
+        .log-msg {
+            background: rgba(0,0,0,0.7);
+            padding: 5px 12px;
+            border-left: 3px solid #00ffcc;
+            border-radius: 0 4px 4px 0;
+            font-size: 12px;
+            animation: fadeOut 2s forwards;
+        }
+        @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div id="ui">SCORE: <span id="score">0</span></div>
-    <canvas id="gameCanvas" width="400" height="500"></canvas>
-    <div class="info">조작법: 좌우 방향키(←, →) - 이동 / 스페이스바(Space) - 발사</div>
+    <h2>🦖 ARK: JURASSIC STADIUM SHOOTER</h2>
+
+    <div id="game-area">
+        <!-- 인벤토리 HUD -->
+        <div class="inventory-hud">
+            <div>🪵 나무: <span id="inv-wood">0</span></div>
+            <div>🌾 짚: <span id="inv-thatch">0</span></div>
+            <div>🪨 돌: <span id="inv-stone">5</span></div>
+            <div>🧵 섬유: <span id="inv-fiber">0</span></div>
+            <div>🍒 과일: <span id="inv-berry">0</span></div>
+            <div>🥩 생고기: <span id="inv-meat">0</span></div>
+            <div>🧥 가죽: <span id="inv-hide">0</span></div>
+        </div>
+
+        <!-- 생존 스탯바 -->
+        <div class="hud-stats">
+            <div class="stat-bar">❤️ <div class="bar-bg"><div class="bar-fill" id="hp-bar" style="background:#ff4d4d;"></div></div></div>
+            <div class="stat-bar">⚡ <div class="bar-bg"><div class="bar-fill" id="stamina-bar" style="background:orange;"></div></div></div>
+            <div class="stat-bar">🍖 <div class="bar-bg"><div class="bar-fill" id="food-bar" style="background:#9acd32;"></div></div></div>
+        </div>
+
+        <!-- 실시간 시스템 메시지 로그 -->
+        <div id="log-box"></div>
+
+        <!-- 마우스 입력 및 렌더링용 캔버스 -->
+        <canvas id="gameCanvas" width="1000" height="550"></canvas>
+
+        <!-- 하단 제작 및 길들이기 퀵바 -->
+        <div class="quickbar">
+            <div class="slot active" id="slot-hand" onclick="selectTool('hand')">
+                <div class="icon">👊</div><div>맨손<br><span style="color:#00ffcc;">마우스클릭</span></div>
+            </div>
+            <div class="slot" id="slot-pickax" onclick="selectTool('pickax')">
+                <div class="icon">⛏️</div><div>곡갱이<br><span id="craft-p-cost" style="font-size:9px;color:#aaa;">(재료부족)</span></div>
+            </div>
+            <div class="slot" id="slot-axe" onclick="selectTool('axe')">
+                <div class="icon">🪓</div><div>도끼<br><span id="craft-a-cost" style="font-size:9px;color:#aaa;">(재료부족)</span></div>
+            </div>
+            <div class="slot" id="slot-tame" onclick="selectTool('tame')">
+                <div class="icon">🏹</div><div>마취총<br><span id="craft-t-cost" style="font-size:9px;color:#aaa;">(재료부족)</span></div>
+            </div>
+        </div>
+
+        <!-- 오버레이 스크린 (시나리오 + 튜토리얼 + 도약 시작) -->
+        <div id="overlay-screen" class="overlay">
+            <h1 style="color: #00ffcc; margin-top: 0; font-size: 26px; letter-spacing: 2px;">🚨 JURASSIC PARK BREAKOUT (SHOOTER)</h1>
+            
+            <div class="story-text">
+                "긴급 경보! 야구 스타디움 지하 생물학 연구소의 제어 장치가 다운되면서 쥬라기 공원의 방벽이 완전히 터져 나갔습니다!<br>
+                랩터, 트리케라톱스, 티라노를 포함한 모든 종류의 고대 공룡들이 스타디움 위로 쏟아져 나와 날뛰기 시작했습니다.<br>
+                당신은 마우스 슈팅 포인터와 아크(ARK) 전술 도구를 활용해 자원을 수집하고 생물들을 길들여 사냥터에서 생존해야 합니다!"
+            </div>
+
+            <div class="tutorial-grid">
+                <div class="tut-card"><b>⌨️ 조작 방법 (이동 및 도약):</b> <b>[A / D]</b> 키로 좌우 이동, 키보드 <b>[Spacebar]</b>를 누르면 위로 도약(점프)합니다. 적의 돌진을 피하세요.</div>
+                <div class="tut-card"><b>🎯 슈팅 조작 (자원 수집):</b> 마우스로 화면의 <b>나무(🌳)</b>나 <b>식물(🌿)</b>을 조준하여 클릭(발사)하면 각각 <b>나무/짚</b>, <b>섬유/과일들</b>이 수집됩니다.</div>
+                <div class="tut-card"><b>🛠️ 도구 제작 슬롯:</b> 자원이 모이면 하단 퀵바를 클릭해 도구를 자동 제작합니다. <b>도끼/곡갱이</b> 장착 시 슈팅 채집 속도와 공격력이 상승합니다.</div>
+                <div class="tut-card"><b>🦖 모든 공룡 사냥 & 루팅:</b> 하늘과 땅에서 다가오는 야생 공룡들을 마우스로 쏴서 처치하면 인벤토리에 <b>가죽</b>과 <b>생고기</b>가 자동으로 들어옵니다.</div>
+                <div class="tut-card"><b>🏹 모든 공룡 길들이기 (Taming):</b> 가죽과 나무로 <b>[마취총]</b>을 제작·장착한 뒤 공룡에게 사격하면 길들이기 수치가 오르며, 100%가 되면 아군이 되어 함께 싸워줍니다!</div>
+                <div class="tut-card"><b>🍖 자동 생존 메커니즘:</b> 주기적으로 배고픔이 감소하며, 허기가 지면 가방 속 생고기를 알아서 섭취해 피와 포만감을 자동 회복합니다.</div>
+            </div>
+
+            <button class="ark-btn" onclick="startArkShooter()">도약 시작 (START SHOOTER)</button>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        const scoreEl = document.getElementById("score");
 
-        // 게임 상태 변수
-        let score = 0;
-        let isGameOver = false;
+        // 서바이벌 시스템 데이터 변수
+        let inv = { wood: 0, thatch: 0, stone: 5, fiber: 0, berry: 0, meat: 0, hide: 0 };
+        let stats = { hp: 100, stamina: 100, food: 100 };
+        let tools = { hand: true, pickax: false, axe: false, tame: false };
+        let currentTool = 'hand';
 
-        // 플레이어 설정 (비행기)
-        const player = {
-            x: canvas.width / 2 - 15,
-            y: canvas.height - 50,
-            width: 30,
-            height: 30,
-            speed: 5
-        };
-
-        // 배열 관리 (미사일, 적)
-        let bullets = [];
-        let enemies = [];
-
-        // 키 입력 감지 상태
-        let keys = { ArrowLeft: false, ArrowRight: false, Space: false };
-        let canShoot = true; // 연속 발사 제한 타이머용
-
-        // 이벤트 리스너 등록
-        document.addEventListener("keydown", (e) => {
-            if (e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "Space") {
-                if (e.code === "Space") e.preventDefault(); // 스페이스바 화면 스크롤 방지
-                keys[e.code] = true;
-            }
-        });
-
-        document.addEventListener("keyup", (e) => {
-            if (e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "Space") {
-                keys[e.code] = false;
-                if (e.code === "Space") canShoot = true; // 스페이스바를 떼면 다시 발사 가능
-            }
-        });
-
-        // 적 스폰 타이머 (1초마다 생성)
-        setInterval(() => {
-            if (isGameOver) return;
-            enemies.push({
-                x: Math.random() * (canvas.width - 25),
-                y: -30,
-                width: 25,
-                height: 25,
-                speed: Math.random() * 2 + 1.5
-            });
-        }, 1000);
-
-        // 충돌 판정 함수 (AABB)
-        function checkCollision(rect1, rect2) {
-            return rect1.x < rect2.x + rect2.width &&
-                   rect1.x + rect1.width > rect2.x &&
-                   rect1.y < rect2.y + rect2.height &&
-                   rect1.y + rect1.height > rect2.y;
-        }
-
-        // 메인 업데이트 및 그리기 루프
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            if (!isGameOver) {
-                // 1. 플레이어 이동 처리
-                if (keys.ArrowLeft && player.x > 0) player.x -= player.speed;
-                if (keys.ArrowRight && player.x < canvas.width - player.width) player.x += player.speed;
-
-                // 2. 미사일 발사 처리
-                if (keys.Space && canShoot) {
-                    bullets.push({
-                        x: player.x + player.width / 2 - 2.5,
-                        y: player.y,
-                        width: 5,
-                        height: 12,
-                        speed: 7
-                    });
-                    canShoot = false; // 연사 속도 조절을 위해 발사 잠금
-                    setTimeout(() => { if (keys.Space === false) canShoot = true; }, 150); // 최소 연사 간격
-                }
-
-                // 3. 미사일 업데이트 및 그리기
-                bullets.forEach((bullet, index) => {
-                    bullet.y -= bullet.speed;
-                    ctx.fillStyle = "#ffff00";
-                    ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
-
-                    // 화면 밖으로 나간 미사일 삭제
-                    if (bullet.y < 0) bullets.splice(index, 1);
-                });
-
-                // 4. 적 업데이트 및 그리기
-                enemies.forEach((enemy, eIndex) => {
-                    enemy.y += enemy.speed;
-                    ctx.fillStyle = "#ff4d4d";
-                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-
-                    // 플레이어와 적의 충돌 검사 -> 게임 오버
-                    if (checkCollision(player, enemy)) {
-                        isGameOver = true;
-                    }
-
-                    // 미사일과 적의 충돌 검사
-                    bullets.forEach((bullet, bIndex) => {
-                        if (checkCollision(bullet, enemy)) {
-                            enemies.splice(eIndex, 1);
-                            bullets.splice(bIndex, 1);
-                            score += 10;
-                            scoreEl.innerText = score;
-                        }
-                    });
-
-                    // 바닥에 닿은 적 삭제
-                    if (enemy.y > canvas.height) enemies.splice(eIndex, 1);
-                });
-
-                // 5. 플레이어 그리기
-                ctx.fillStyle = "#00ffcc";
-                ctx.fillRect(player.x, player.y, player.width, player.height);
-
-                requestAnimationFrame(gameLoop);
-            } else {
-                // 게임 오버 스크린 출력
-                ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.fillStyle = "#ff4d4d";
-                ctx.font = "30px sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
-                
-                ctx.fillStyle = "#fff";
-                ctx.font = "16px sans-serif";
-                ctx.fillText("새로고침(F5)을 눌러 다시 시작하세요", canvas.width / 2, canvas.height / 2 + 25);
-            }
-        }
-
-        // 최초 실행
-        gameLoop();
-    </script>
-</body>
-</html>
