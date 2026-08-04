@@ -3,86 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>베이스볼 스타디움 - 메인</title>
+    <title>ARK: 스타디움 서바이벌</title>
     <style>
         body {
             font-family: 'Malgun Gothic', sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        header {
-            background-color: #1e3932;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 8px;
-        }
-        .content {
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .btn-container {
-            margin: 20px 0;
+            padding: 0;
+            background-color: #0d131a;
+            color: #fff;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        .action-btn {
+
+        h2 {
+            margin: 10px 0;
+            color: #4df3ff;
+            text-shadow: 0 0 10px rgba(77, 243, 255, 0.5);
+            font-size: 24px;
+        }
+
+        /* 게임 컨테이너 및 맵 배경 */
+        #game-container {
+            width: 800px;
+            height: 400px;
+            background: linear-gradient(to bottom, #1a2a3a 0%, #2e4a62 40%, #5c4033 90%, #3d2b1f 100%);
+            position: relative;
+            overflow: hidden;
+            border: 3px solid #4df3ff;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(77, 243, 255, 0.3);
+        }
+
+        /* 원경/근경 레이어 (현실감 있는 연출) */
+        .mountain-layer {
+            position: absolute;
+            bottom: 60px;
+            width: 200%;
+            height: 150px;
+            background: repeating-linear-gradient(90deg, #1c2d3d, #1c2d3d 80px, #121e2a 160px);
+            opacity: 0.4;
+            clip-path: polygon(0% 100%, 10% 40%, 25% 70%, 40% 20%, 55% 60%, 70% 30%, 85% 80%, 100% 40%, 100% 100%);
+            animation: moveBg 20s linear infinite;
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 60px;
+            background: linear-gradient(to bottom, #4d3319, #261a0d);
+            border-top: 4px solid #556b2f;
+            animation: moveBg 4s linear infinite;
+        }
+
+        @keyframes moveBg {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* 아크 스타일 생존 HUD 스탯 (우측 상단) */
+        .hud-container {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(77, 243, 255, 0.3);
+            font-size: 12px;
+            width: 140px;
+        }
+
+        .stat-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bar-bg {
             flex: 1;
-            padding: 15px;
-            font-size: 16px;
+            height: 8px;
+            background: #222;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .hp-fill { background: #ff4d4d; }
+        .stamina-fill { background: #darkorange; }
+        .food-fill { background: #9acd32; }
+        .water-fill { background: #1e90ff; }
+
+        /* 스코어 UI (좌측 상단) */
+        .score-box {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 18px;
             font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            color: #4df3ff;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 6px;
+            border-left: 4px solid #4df3ff;
+        }
+
+        /* 플레이어 공룡 (티라노/랩터 컨셉) */
+        #dino {
+            width: 50px;
+            height: 60px;
+            position: absolute;
+            bottom: 60px;
+            left: 80px;
+            font-size: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .running-animation {
+            animation: dinoBob 0.4s infinite alternate;
+        }
+
+        @keyframes dinoBob {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-4px); }
+        }
+
+        /* 장애물 */
+        .obstacle {
+            position: absolute;
+            bottom: 60px;
+            font-size: 35px;
+            z-index: 10;
+        }
+
+        /* 안내 및 게임오버 모달 */
+        #menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 25, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
             text-align: center;
-            text-decoration: none;
-            transition: background-color 0.2s;
         }
-        .game-btn {
-            background-color: #2b7a78;
-            color: white;
+
+        .ark-btn {
+            background: linear-gradient(135deg, #113f48 0%, #1a5f6e 100%);
+            color: #4df3ff;
+            border: 2px solid #4df3ff;
+            padding: 12px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            text-shadow: 0 0 5px rgba(77, 243, 255, 0.5);
+            box-shadow: 0 0 10px rgba(77, 243, 255, 0.2);
+            margin-top: 15px;
+            transition: all 0.2s;
         }
-        .game-btn:hover {
-            background-color: #17252a;
+
+        .ark-btn:hover {
+            background: #4df3ff;
+            color: #113f48;
+            box-shadow: 0 0 20px #4df3ff;
         }
-        .earthquake-btn {
-            background-color: #def2f1;
-            color: #17252a;
-            border: 1px solid #2b7a78;
-        }
-        .earthquake-btn:hover {
-            background-color: #feffff;
-        }
-        .back-btn {
-            display: inline-block;
+
+        .controls-desc {
             margin-top: 20px;
-            color: #1e3932;
+            font-size: 14px;
+            color: #8fa0b0;
+        }
+
+        .nav-links {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: #8fa0b0;
             text-decoration: none;
             font-weight: bold;
+            font-size: 14px;
+        }
+
+        .nav-links a:hover {
+            color: #4df3ff;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h2>⚾ 야구 메인 스타디움</h2>
-    </header>
-    <div class="content">
-        <h3>오늘의 주요 경기 일정</h3>
-        <p>여기에 실시간 스코어, 뉴스, 구단 순위 등의 내용을 채워 넣을 수 있습니다.</p>
-        
-        <div class="btn-container">
-            <!-- 게임 시작을 누르면 game.html 파일로 이동하도록 경로 지정 -->
-            <a href="game.html" class="action-btn game-btn">🎮 게임 시작</a>
-            <button class="action-btn earthquake-btn" onclick="location.href='earthquake.html'">🌋 지진 모델링</button>
+
+    <h2>🦖 ARK: STADIUM SURVIVAL</h2>
+
+    <div id="game-container">
+        <!-- 배경 그래픽 구조 레이어 -->
+        <div class="mountain-layer" id="bg-mountain"></div>
+        <div class="ground" id="bg-ground"></div>
+
+        <!-- 스코어 HUD -->
+        <div class="score-box">SURVIVAL: <span id="score">0</span>m</div>
+
+        <!-- 아크 서바이벌식 상태창 스탯 -->
+        <div class="hud-container">
+            <div class="stat-bar">❤️ <div class="bar-bg"><div class="bar-fill hp-fill" id="hp-bar"></div></div></div>
+            <div class="stat-bar">⚡ <div class="bar-bg"><div class="bar-fill stamina-fill" id="stamina-bar"></div></div></div>
+            <div class="stat-bar">🍖 <div class="bar-bg"><div class="bar-fill food-fill" id="food-bar"></div></div></div>
+            <div class="stat-bar">💧 <div class="bar-bg"><div class="bar-fill water-fill" id="water-bar"></div></div></div>
         </div>
 
-        <a href="index.html" class="back-btn">← 처음으로 돌아가기</a>
+        <!-- 플레이어 -->
+        <div id="dino" class="running-animation">🦖</div>
+
+        <!-- 시작 / 게임오버 메인 스크린 -->
+        <div id="menu-overlay">
+            <h1 id="menu-title" style="color: #4df3ff; margin-bottom: 5px;">가상 오버레이 접속됨</h1>
+            <p id="menu-sub" style="color: #8fa0b0; margin: 5px 0 15px 0;">생존 구역에서 야생 생명체들을 회피하십시오.</p>
+            <button class="ark-btn" onclick="startGame()" id="start-btn">도입 시작 (START)</button>
+            <p class="controls-desc">조작 방법: [Spacebar] 또는 화면 터치로 도약</p>
+        </div>
     </div>
-</body>
-</html>
+
+    <!-- 모바일 환경을 위한 하단 점프 컨트롤러 버튼 -->
+    <button class="ark-btn" style="width: 800px; max-width: 95vw; margin-top: 10px;" onclick="triggerJump()">도약 / JUMP</button>
+
+    <div class="nav-links">
+        <a href="index.html">← 메인 스타디움으로</a>
+    </div>
+
+    <script>
+        const dino = document.getElementById('dino');
+        const container = document.getElementById('game-container');
+        const menuOverlay = document.getElementById('menu-overlay');
+        const menuTitle = document.getElementById('menu-title');
+        const menuSub = document.getElementById('menu-sub');
+        const startBtn = document.getElementById('start-btn');
+        const scoreEl = document.getElementById('score');
+
+        // 백그라운드 스크롤 애니메이션 제어용
+        const bgMountain = document.getElementById('bg-mountain');
+        const bgGround = document.getElementById('bg-ground');
+
+        // 아크 스탯 제어 엘리먼트
+        const hpBar = document.getElementById('hp-bar');
+        const staminaBar = document.getElementById('stamina-bar');
+        const foodBar = document.getElementById('food-bar');
+        const waterBar = document.getElementById('water-bar');
+
+        let isPlaying = false;
+        let isJumping = false;
+        let score = 0;
+        let gameLoopInterval;
+        let statInterval;
+        let obstacleTimeout;
+        
+        // 생존 변수 스탯 상태 데이터
+        let stats = { hp: 100, stamina: 100, food: 100, water: 100 };
+
+        // 공룡 점프 역학 시스템 
+        let jumpVelocity = 0;
+        let dinoBottom = 60;
+        const gravity = 1.4;
+
+        // 게임 초기 설정 및 시작 처리 
+        function startGame() {
+            menuOverlay.style.display = 'none';
+            isPlaying = true;
+            score = 0;
+            scoreEl.innerText = score;
+            dinoBottom = 60;
+            dino.style.bottom = dinoBottom + 'px';
+            dino.classList.add('running-animation');
+
+            // 아크 생존 핵심 스탯 초기화
+            stats = { hp: 100, stamina: 100, food: 100, water: 100 };
+            updateStatBars();
+
+            // 백그라운드 환경 스크롤 활성화
+            bgMountain.style.animationPlayState = 'running';
+            bgGround.style.animationPlayState = 'running';
+
+            // 기존 장애물 파괴 클리어 
+            document.querySelectorAll('.obstacle').forEach(obs => obs.remove());
+
+            // 핵심 주기적 메인 루프 가동
+            gameLoopInterval = setInterval(updateGame, 20);
+            statInterval = setInterval(updateSurvivalStats, 1000);
+
+            // 최초 첫 장애물 소환 타이머 구동
+            spawnObstacle();
+        }
+
+        // 점프 트리거 핸들러 
+        function triggerJump() {
+            if (!isPlaying || isJumping || stats.stamina < 15) return;
+            
+            isJumping = true;
+            jumpVelocity = 22; // 점프 최초 추진 속도
+
