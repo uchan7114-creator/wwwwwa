@@ -1,17 +1,10 @@
-const mag = eq.properties.mag;
+import matplotlib.pyplot as plt
+import geopandas as gpd
 
-const marker = L.marker([lat, lon], {
-    icon: L.divIcon({
-        className: "quake-label",
-        html: `<div class="quake">${mag.toFixed(1)}</div>`,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
-    })
-}).addTo(map);
+world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
 
-marker.bindPopup(`
-<b>규모</b> : M${mag}<br>
-<b>위치</b> : ${place}<br>
-<b>깊이</b> : ${depth} km<br>
-<b>시간</b> : ${time.toLocaleString()}
-`);
+fig, ax = plt.subplots(figsize=(16,8))
+world.plot(ax=ax, color="#d9d2b6", edgecolor="black")
+
+ax.set_title("World Map")
+plt.show()
