@@ -3,295 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARK: 쥬라기 스타디움 서바이벌</title>
+    <title>베이스볼 스타디움 - 메인</title>
     <style>
         body {
             font-family: 'Malgun Gothic', sans-serif;
             margin: 0;
-            padding: 0;
-            background-color: #050a0e;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            user-select: none;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
         }
-
-        /* 메인 게임 화면 */
-        #game-container {
-            width: 1000px;
-            height: 550px;
-            background: linear-gradient(to bottom, #0b1d28 0%, #15354a 40%, #4a3b2c 85%, #2d2216 100%);
-            position: relative;
-            overflow: hidden;
-            border: 3px solid #00ffcc;
-            border-radius: 16px;
-            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
-        }
-
-        /* 숲/환경 오브젝트 레이어 */
-        .scenery {
-            position: absolute;
-            bottom: 80px;
-            font-size: 50px;
-            z-index: 2;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-        .scenery:active { transform: scale(1.2); }
-
-        .ground {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 80px;
-            background: linear-gradient(to bottom, #3a2f21, #1a130b);
-            border-top: 6px solid #2d5a27;
-            z-index: 3;
-        }
-
-        /* 생존 인벤토리 & HUD (좌측 상단) */
-        .inventory-hud {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(5, 15, 25, 0.85);
-            border: 1px solid #00ffcc;
-            padding: 12px;
+        header {
+            background-color: #1e3932;
+            color: white;
+            padding: 20px;
+            text-align: center;
             border-radius: 8px;
-            font-size: 13px;
-            display: grid;
-            grid-template-columns: repeat(2, 110px);
-            gap: 6px;
-            z-index: 5;
         }
-        .inv-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .content {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
-        /* 제작 및 도구 슬롯 (하단 퀵바) */
-        .quickbar {
-            position: absolute;
-            bottom: 95px;
-            left: 50%;
-            transform: translateX(-50%);
+        .btn-container {
+            margin: 20px 0;
             display: flex;
             gap: 10px;
-            background: rgba(0,0,0,0.6);
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid rgba(0,255,204,0.4);
-            z-index: 5;
         }
-        .slot {
-            width: 65px;
-            height: 65px;
-            background: rgba(20,40,60,0.8);
-            border: 2px solid #666;
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            cursor: pointer;
-            text-align: center;
-        }
-        .slot.active { border-color: #00ffcc; background: rgba(0,255,204,0.2); }
-        .slot .icon { font-size: 24px; }
-
-        /* 아크 상태창 (우측 상단) */
-        .hud-stats {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            background: rgba(5, 15, 25, 0.85);
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #00ffcc;
-            font-size: 12px;
-            width: 140px;
-            z-index: 5;
-        }
-        .stat-bar { display: flex; align-items: center; gap: 6px; }
-        .bar-bg { flex: 1; height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
-        .bar-fill { height: 100%; width: 100%; }
-
-        /* 엔티티 객체 (플레이어, 공룡) */
-        #player {
-            position: absolute;
-            bottom: 80px;
-            left: 150px;
-            font-size: 55px;
-            z-index: 4;
-            transition: bottom 0.1s linear;
-        }
-        .tamed-follow {
-            position: absolute;
-            bottom: 80px;
-            left: 60px;
-            font-size: 50px;
-            z-index: 4;
-            display: none;
-        }
-
-        .dino-entity {
-            position: absolute;
-            bottom: 80px;
-            font-size: 55px;
-            z-index: 4;
-            cursor: pointer;
-        }
-        .taming-progress {
-            position: absolute;
-            top: -20px;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: #222;
-            border: 1px solid #00ffcc;
-            display: none;
-        }
-        .taming-fill { height: 100%; width: 0%; background: #00ffcc; }
-
-        /* 오버레이 시스템 (스토리, 튜토리얼, 메뉴) */
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 12, 18, 0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            padding: 40px;
-            box-sizing: border-box;
-            text-align: center;
-        }
-        .story-text {
-            color: #ff3333;
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            max-width: 750px;
-            line-height: 1.6;
-            text-shadow: 0 0 10px rgba(255,51,51,0.3);
-        }
-        .tutorial-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            max-width: 750px;
-            text-align: left;
-            margin-bottom: 25px;
-            background: rgba(250,250,250,0.05);
+        .action-btn {
+            flex: 1;
             padding: 15px;
-            border-radius: 8px;
-        }
-        .tut-card { border-left: 3px solid #00ffcc; padding-left: 10px; font-size: 14px; }
-        .tut-card b { color: #00ffcc; }
-
-        .ark-btn {
-            background: linear-gradient(135deg, #0e353d 0%, #155463 100%);
-            color: #00ffcc;
-            border: 2px solid #00ffcc;
-            padding: 14px 45px;
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
-            border-radius: 6px;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
-            text-shadow: 0 0 8px rgba(0,255,204,0.6);
-            box-shadow: 0 0 15px rgba(0,255,204,0.3);
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.2s;
         }
-        .ark-btn:hover { background: #00ffcc; color: #0e353d; box-shadow: 0 0 25px #00ffcc; }
-
-        /* 알림 메시지 이펙트 */
-        #log-box {
-            position: absolute;
-            bottom: 180px;
-            left: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            pointer-events: none;
-            z-index: 6;
+        .game-btn {
+            background-color: #2b7a78;
+            color: white;
         }
-        .log-msg {
-            background: rgba(0,0,0,0.7);
-            padding: 5px 12px;
-            border-left: 3px solid #00ffcc;
-            border-radius: 0 4px 4px 0;
-            font-size: 13px;
-            animation: fadeOut 2.5s forwards;
+        .game-btn:hover {
+            background-color: #17252a;
         }
-        @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+        .earthquake-btn {
+            background-color: #def2f1;
+            color: #17252a;
+            border: 1px solid #2b7a78;
+        }
+        .earthquake-btn:hover {
+            background-color: #feffff;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            color: #1e3932;
+            text-decoration: none;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-
-    <div id="game-container">
-        <!-- 환경 레이어 -->
-        <div id="environment-layer"></div>
-        <div class="ground"></div>
-
-        <!-- 자원 수집 인벤토리 HUD -->
-        <div class="inventory-hud">
-            <div class="inv-item">🪵 나무: <span id="inv-wood">0</span></div>
-            <div class="inv-item">짚: <span id="inv-thatch">0</span></div>
-            <div class="inv-item">🪨 돌: <span id="inv-stone">0</span></div>
-            <div class="inv-item">🧵 섬유: <span id="inv-fiber">0</span></div>
-            <div class="inv-item">🍒 과일: <span id="inv-berry">0</span></div>
-            <div class="inv-item">🥩 생고기: <span id="inv-meat">0</span></div>
-            <div class="inv-item">hide 가죽: <span id="inv-hide">0</span></div>
+    <header>
+        <h2>⚾ 야구 메인 스타디움</h2>
+    </header>
+    <div class="content">
+        <h3>오늘의 주요 경기 일정</h3>
+        <p>여기에 실시간 스코어, 뉴스, 구단 순위 등의 내용을 채워 넣을 수 있습니다.</p>
+        
+        <div class="btn-container">
+            <!-- 🎮 게임 시작 버튼을 누르면 무조건 game.html 파일로 페이지가 완전히 이동합니다 -->
+            <a href="game.html" class="action-btn game-btn">🎮 게임 시작 (아크 공룡 서바이벌)</a>
+            <a href="earth.html" class="action-btn earthquake-btn">🌋 지진 모델링</a>
         </div>
 
-        <!-- 실시간 시스템 생존 스탯바 -->
-        <div class="hud-stats">
-            <div class="stat-bar">❤️ <div class="bar-bg"><div class="bar-fill" id="hp-bar" style="background:#ff4d4d;"></div></div></div>
-            <div class="stat-bar">⚡ <div class="bar-bg"><div class="bar-fill" id="stamina-bar" style="background:orange;"></div></div></div>
-            <div class="stat-bar">🍖 <div class="bar-bg"><div class="bar-fill" id="food-bar" style="background:#9acd32;"></div></div></div>
-        </div>
-
-        <!-- 알림 이펙트 로그 창 -->
-        <div id="log-box"></div>
-
-        <!-- 실시간 오브젝트/엔티티 구성 -->
-        <div id="player">🏃</div>
-        <div id="my-dino" class="tamed-follow"></div>
-        <div id="active-dino"></div>
-
-        <!-- 하단 장비 도구 및 제작 퀵바 -->
-        <div class="quickbar">
-            <div class="slot active" id="slot-hand" onclick="selectTool('hand')">
-                <div class="icon">👊</div><div>맨손</div>
-            </div>
-            <div class="slot" id="slot-pickax" onclick="selectTool('pickax')">
-                <div class="icon">⛏️</div><div>곡갱이<br><span id="craft-p-cost" style="font-size:9px;color:#aaa;">(재료부족)</span></div>
-            </div>
-            <div class="slot" id="slot-axe" onclick="selectTool('axe')">
-                <div class="icon">🪓</div><div>도끼<br><span id="craft-a-cost" style="font-size:9px;color:#aaa;">(재료부족)</span></div>
-            </div>
-            <div class="slot" id="slot-tame" onclick="feedTame()">
-                <div class="icon">🍒</div><div>과일주기<br><span style="font-size:9px;color:#00ffcc;">(길들이기)</span></div>
-            </div>
-        </div>
-
-        <!-- 오버레이 스크린 (시나리오 + 조작법 + 튜토리얼) -->
-        <div id="overlay-screen" class="overlay">
-            <h1 style="color: #00ffcc; margin-top: 0; font-size: 32px; letter-spacing: 2px;">🚨 JURASSIC STADIUM CRASHED</h1>
-            
-            <div class="story-text">
-                "긴급 경보! 베이스볼 스타디움 지하 유전자 실험실과 연동된 쥬라기 공원의 방벽이 완전히 폭파되어 무너졌습니다!<br>
-                생태계가 붕괴하여 모든 종류의 야생 공룡들이 경기장 전역으로 뛰쳐나와 사냥을 시작했습니다.<br>
+        <a href="index.html" class="back-btn">← 처음으로 돌아가기</a>
+    </div>
+</body>
+</html>
